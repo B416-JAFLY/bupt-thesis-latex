@@ -1,0 +1,52 @@
+%% -----------------------------------------------------------------
+%% 北京邮电大学研究生学位论文 - 纸质版封面套印模板
+%% 用途说明：
+%% 1. 纸质版论文封面打印在研究生院统一发放的背景纸上（硕士：淡黄色铜版纸；博士：深灰色铜版纸）
+%% 2. 背景纸已预先印刷了校徽及以上部分（校名、学位类别、校徽）
+%% 3. 本文件仅在校徽下方对应区域打印个人信息与题目，供打印店直接进纸套印
+%% -----------------------------------------------------------------
+
+\documentclass[UTF8,a4paper,zihao=-4]{ctexart}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  left=3.17cm,
+  right=3.17cm,
+  top=2.54cm,
+  bottom=2.54cm
+}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+
+\newcommand{\BUPTunderline}[2]{\underline{\makebox[#1][c]{#2}}}
+
+\begin{document}
+\pagestyle{empty}
+
+%% 校徽及以上留空高度（根据背景纸印刷位置预留垂直间距）
+\vspace*{10.5cm}
+
+\begin{center}
+  %% 论文题目（宋体小二号加粗，不超过36字）
+  {\songti\zihao{-2}\bfseries
+    题\quad 目：\underline{\makebox[10.5cm][c]{基于深度学习的高性能协同通信网络优化方法}}%
+  }\\[2.0cm]
+
+  %% 个人信息（宋体四号加粗）
+  {\songti\zihao{4}\bfseries
+    \renewcommand{\arraystretch}{1.6}
+    \begin{tabular}{rc}
+      学\qquad 号： & \BUPTunderline{7.5cm}{2022110123} \\
+      姓\qquad 名： & \BUPTunderline{7.5cm}{张\quad 三} \\
+      学科专业：   & \BUPTunderline{7.5cm}{信息与通信工程} \\
+      学习方式：   & \BUPTunderline{7.5cm}{全日制} \\
+      导\qquad 师： & \BUPTunderline{7.5cm}{李\quad 四\quad 教授} \\
+      学\qquad 院： & \BUPTunderline{7.5cm}{信息与通信工程学院}
+    \end{tabular}%
+  }\\[2.2cm]
+
+  %% 打印日期
+  {\songti\zihao{4}\bfseries 2025~年~5~月~30~日}
+\end{center}
+
+\end{document}

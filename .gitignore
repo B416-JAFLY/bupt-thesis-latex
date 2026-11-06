@@ -1,0 +1,20 @@
+# LaTeX intermediate and temporary files
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bcf
+*.run.xml
+
+# macOS
+.DS_Store
+
+# Tectonic cache
+.tectonic/

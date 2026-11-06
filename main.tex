@@ -1,0 +1,131 @@
+%% -----------------------------------------------------------------
+%% 北京邮电大学研究生学位论文 LaTeX 模板 - 主文件
+%% 遵循标准：北京邮电大学研究生院《学位论文写作与制作规范》（2025年1月15日修订）
+%% 编译引擎：XeLaTeX + BibTeX
+%% -----------------------------------------------------------------
+
+%% =================================================================
+%% 1. 文档类设置（请根据个人实际情况选择对应的文档类参数）
+%% =================================================================
+%% 学术学位硕士（电子版，默认）：
+\documentclass[master,phil,fulltime,electronic]{buptthesis}
+
+%% 其它可选类型（取消相应注释即可使用）：
+%% \documentclass[master,phil,fulltime,print]{buptthesis}       % 学硕双面打印版
+%% \documentclass[master,eng,fulltime,electronic]{buptthesis}    % 专硕电子版
+%% \documentclass[master,eng,fulltime,print]{buptthesis}         % 专硕双面打印版
+%% \documentclass[phd,phil,fulltime,electronic]{buptthesis}       % 学博电子版
+%% \documentclass[phd,phil,fulltime,print]{buptthesis}            % 学博双面打印版
+%% \documentclass[phd,eng,fulltime,electronic]{buptthesis}        % 专博电子版
+%% \documentclass[phd,eng,fulltime,print]{buptthesis}             % 专博双面打印版
+
+%% 选项说明：
+%% master / phd        : 硕士学位 / 博士学位
+%% phil / eng          : 学术学位 / 专业学位
+%% fulltime / parttime : 全日制 / 非全日制
+%% electronic / print  : 电子版（无多余空白页，适于送审与系统格式检测）/ 打印版（双面印刷，偶数页自动留白）
+
+%% =================================================================
+%% 2. 用户宏包与自定义配置（可选）
+%% =================================================================
+\usepackage{siunitx}      % 物理量与国际单位支持
+\usepackage{subcaption}   % 子图排版支持
+
+%% =================================================================
+%% 3. 论文元数据填写（请按实际情况填写）
+%% =================================================================
+
+%% 中文扉页信息
+\BUPTthesiscntitlepage{%
+  confidential = {公开},                  % 密级：仅限涉密学生改写，默认“公开”
+  title = {基于深度学习的高性能协同通信网络优化方法}, % 论文题目（不超过36个汉字）
+  studentid = {2022110123},               % 10位学号
+  name = {张\quad 三},                    % 作者姓名
+  major = {信息与通信工程},               % 学科专业（一级/二级学科或专业学位领域）
+  trainingmode = {全日制},                % 培养方式：全日制 / 非全日制
+  supervisor = {李\quad 四\quad 教授},    % 导师姓名与职称
+  institute = {信息与通信工程学院}         % 所在学院
+}
+
+%% 日期配置
+\BUPTdateOptions{%
+  pageYear = {2025},                     % 扉页年份
+  pageMonth = {5},                       % 扉页月份
+  pageDay = {30},                        % 扉页日期
+  dissertationYear = {2025},             % 答辩年份
+  dissertationMonth = {5},               % 答辩月份
+  dissertationDay = {30}                 % 答辩日期
+}
+
+%% 英文扉页信息
+\BUPTthesisentitlepage{%
+  confidentialEN = {Public},
+  titleEN = {Research on High-Performance Collaborative Communication Optimization via Deep Learning},
+  studentidEN = {2022110123},
+  nameEN = {San Zhang},
+  majorEN = {Information and Communication Engineering},
+  supervisorEN = {Prof. Si Li},
+  instituteEN = {School of Information and Communication Engineering}
+}
+
+%% 答辩委员会名单（送审前版本可留空；答辩后终版如实填写）
+\BUPTdissertationcommitteepage{%
+  chairName = {王\quad 五},
+  chairTitle = {教授},
+  chairOrgan = {北京邮电大学},
+  memberAName = {赵\quad 六},
+  memberATitle = {教授},
+  memberAOrgan = {北京邮电大学},
+  memberBName = {孙\quad 七},
+  memberBTitle = {研究员},
+  memberBOrgan = {中国科学院计算技术研究所},
+  memberCName = {周\quad 八},
+  memberCTitle = {副教授},
+  memberCOrgan = {北京邮电大学},
+  memberDName = {吴\quad 九},
+  memberDTitle = {教授},
+  memberDOrgan = {清华大学},
+  secretaryName = {郑\quad 十},
+  secretaryTitle = {副教授},
+  secretaryOrgan = {北京邮电大学}
+}
+
+%% 独创性声明扫描替换页（可选：如果已有签字盖章的整页扫描版PDF，取消下行注释指定文件路径即可）
+%% \statementpage{resources/signed_statement.pdf}
+
+%% =================================================================
+%% 4. 论文正文排版架构
+%% =================================================================
+\begin{document}
+
+%% ---------------- 扉页与版权声明部分 ----------------
+\makechinesetitle      % 中文扉页（电子版即为第1页）
+\makeenglishtitle      % 英文扉页
+\makecommitteelist     % 答辩委员会名单
+\makestatement         % 独创性声明与论文使用授权说明
+
+%% ---------------- 前言部分（大写罗马数字页码） ----------------
+\frontmatter
+\include{Chapter/01_cnabstract}      % 中文摘要及关键词
+\include{Chapter/02_enabstract}      % 英文摘要及关键词
+\tableofcontents                     % 论文目录（自动排版至三级目录项）
+\include{Chapter/03_nomenclature}    % 符号说明（三列表格）
+
+%% ---------------- 正文部分（阿拉伯数字页码，从第1页重新编排） ----------------
+\mainmatter
+\include{Chapter/10_introduction}    % 第一章 绪论
+\include{Chapter/20_theory}          % 第二章 理论分析与系统建模
+\include{Chapter/30_experiments}     % 第三章 实验验证与结果分析
+\include{Chapter/40_conclusion}      % 第四章 总结与展望
+
+%% ---------------- 参考文献部分（GB/T 7714-2015 格式） ----------------
+\bibliographystyle{gbt7714-numerical}
+\bibliography{Bib/thesis}
+
+%% ---------------- 附录与后置章节 ----------------
+\include{Chapter/90_appendix}        % 附录
+\include{Chapter/91_acknowledgements}% 致谢
+\include{Chapter/92_publications}    % 攻读学位期间取得的创新成果目录
+\include{Chapter/93_experience}      % 作者学习经历
+
+\end{document}

@@ -1,0 +1,161 @@
+%% -----------------------------------------------------------------
+%% 北京邮电大学研究生学位论文 - 第一章 绪论
+%% 包含全部规范元素示例：多级标题、公式、图表、三线表、分图、长表续表、算法、脚注与文献引用
+%% -----------------------------------------------------------------
+
+\chapter{绪论}
+
+\section{研究背景与意义}
+
+正文文本采用宋体小四号，英文字母与阿拉伯数字采用 Times New Roman 字体，两端对齐，首行缩进 2 字符，段前 0 行，段后 0 行，行间距为固定值 20 磅\footnote{这是一个脚注示例。规范要求：脚注采用小五号宋体，西文采用 Times New Roman，每页重新按带圈数字序号编号。}。
+
+随着新一代移动通信技术与人工智能的深度融合，大规模异构网络面临着计算资源受限、拓扑结构动态变化以及服务质量差异化等多重严峻挑战。针对这些问题，学术界和工业界开展了广泛的研究。文献~\cite{yuanxunlai2012}探讨了复杂系统演化机制；文献~\cite{vaswani2017attention}提出了基于自注意力机制的深度网络模型；相关国家与行业标准也在逐步完善~\cite{gbt7714, gbt25100}。
+
+\subsection{国内外研究现状}
+
+在国内外学者的共同努力下，网络协同计算与资源调度技术取得了长足的进步。根据学者钱学森等在系统学方面的经典论述~\cite{qianxuesen2001}，复杂系统的多维度建模需要综合考虑输入约束与多目标均衡。
+
+\subsubsection{集中式调度机制的瓶颈}
+
+集中式控制架构在小规模网络中表现良好，但在高并发场景下容易产生单点性能瓶颈与通信拥塞。
+
+\paragraph{异构计算开销约束}
+在边缘异构计算环境中，不同节点的处理能力差异显著，这要求系统必须具备自适应负载均衡能力。四级标题采用宋体小四号加粗（或宋体小四号），首行缩进 2 字符，题序与标题之间空 1 格。
+
+\section{数学公式排版规范}
+
+论文中公式应另起一行居中横排，公式编号按章连续编排，右端对齐，置于圆括号内，如式~(\ref{eq:system_model})与式~(\ref{eq:loss_func})。
+
+设第 $k$ 个网络节点的信噪比为 $\gamma_k$，则该节点的信道容量可表示为香农公式形式：
+\begin{equation}
+  C_k = B \log_2 \left( 1 + \frac{P_k |h_k|^2}{\sigma^2 + \sum_{j \neq k} P_j |h_j|^2} \right)
+  \label{eq:system_model}
+\end{equation}
+其中，$B$ 表示信道带宽，$P_k$ 为节点发射功率，$h_k$ 表示信道增益衰减系数，$\sigma^2$ 表示加性高斯白噪声功率。
+
+系统总损失函数定义为预测误差与正则化项之和：
+\begin{equation}
+  \mathcal{L}(\mathbf{W}) = \frac{1}{N}\sum_{i=1}^N \ell(y_i, f(\mathbf{x}_i; \mathbf{W})) + \frac{\lambda}{2} \|\mathbf{W}\|_F^2
+  \label{eq:loss_func}
+\end{equation}
+
+\section{图与子图排版规范}
+
+规范要求：图应具有“自明性”，图的编号由“图”和从“1”开始的阿拉伯数字组成，如“图1-1”。图题置于图下方居中，中文字体为楷体五号，西文字体为 Times New Roman，固定值 20 磅。图序与图名之间空 1 格，图名中不允许使用标点符号，图名后不加标点。如有英文标题，使用 \texttt{\textbackslash bicaption} 宏命令输出。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.28\textwidth]{resources/logo.png}
+  \bicaption{北京邮电大学校徽标识图}{Beijing University of Posts and Telecommunications Emblem}
+  \label{fig:bupt_logo}
+  \fignote{注：校徽标识矢量图文件存放于 \texttt{resources/} 目录中。如有需要可对图片进行注释说明，可省略。}
+\end{figure}
+
+如果一个图由两个或两个以上分图组成时，各分图分别以 (a)、(b)、(c)…… 作为分图序，并须有分图名，分图名直接列在各自分图的正下方，主图名列在所有分图的下方正中，如图~\ref{fig:subfig_demo}所示。
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[b]{0.35\textwidth}
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/logo.png}
+    \caption{子系统节点模型 A}
+    \label{fig:sub_a}
+  \end{subfigure}
+  \hspace{1.5cm}
+  \begin{subfigure}[b]{0.35\textwidth}
+    \centering
+    \includegraphics[width=0.7\textwidth]{resources/logo.png}
+    \caption{子系统节点模型 B}
+    \label{fig:sub_b}
+  \end{subfigure}
+  \bicaption{多节点协同系统拓扑对比图}{Comparison of Multi-Node Collaborative System Topologies}
+  \label{fig:subfig_demo}
+\end{figure}
+
+\section{表格与三线表排版规范}
+
+表的编排一般采用国际通行的三线表。表编号由“表”和从“1”开始的阿拉伯数字组成，如“表1-1”。表题置于表上方居中，使用楷体五号，固定值 20 磅。表序与表名之间空 1 格，表名后不加标点。
+
+\begin{table}[htbp]
+  \centering
+  \bicaption{系统运行核心参数设置表}{Core Parameter Configurations of the Evaluated System}
+  \label{tab:system_params}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lccc}
+    \toprule
+    参数名称 & 符号表示 & 默认基准值 & 取值范围 \\
+    \midrule
+    载波中心频率 & $f_c$ & $3.5\ \mathrm{GHz}$ & $[2.0, 6.0]$ \\
+    系统带宽 & $B$ & $100\ \mathrm{MHz}$ & $[20, 200]$ \\
+    基站发射功率 & $P_t$ & $43\ \mathrm{dBm}$ & $[30, 46]$ \\
+    噪声功率谱密度 & $N_0$ & $-174\ \mathrm{dBm/Hz}$ & 常数 \\
+    节点移动速度 & $v$ & $5\ \mathrm{m/s}$ & $[0, 30]$ \\
+    \bottomrule
+  \end{tabular}
+  \tablenote{数据来源：如需对数据来源进行说明，请参照此格式排版，首行缩进 2 字符。}
+\end{table}
+
+\section{跨页长表格与续表排版}
+
+如某个表需要转页接排，在随后各页上应重复表的编号与表头，如“续表1-2 表名”，英文则用“Table 1-2 Table name (continued)”，且续表均应重复表头。本模板通过 \texttt{longtable} 宏包原生支持该规范要求，如表~\ref{tab:longtable_example}所示。
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{>{\centering\arraybackslash}m{2.5cm} >{\centering\arraybackslash}m{3.5cm} >{\centering\arraybackslash}m{3.5cm} >{\centering\arraybackslash}m{4.0cm}}
+  \caption{大规模测试样本属性统计长表} \label{tab:longtable_example} \\
+  \toprule
+  样本编号 & 特征维度一 & 特征维度二 & 标注分类结果 \\
+  \midrule
+  \endfirsthead
+
+  \multicolumn{4}{c}{{\songti\zihao{5}\kaishu 续表1-2 大规模测试样本属性统计长表}} \\
+  \toprule
+  样本编号 & 特征维度一 & 特征维度二 & 标注分类结果 \\
+  \midrule
+  \endhead
+
+  \bottomrule
+  \endfoot
+
+  \bottomrule
+  \endlastfoot
+
+  Sample-001 & $12.45 \pm 0.12$ & $0.982$ & 正常传输状态 \\
+  Sample-002 & $15.89 \pm 0.25$ & $0.941$ & 正常传输状态 \\
+  Sample-003 & $28.34 \pm 0.88$ & $0.612$ & 弱信道衰落状态 \\
+  Sample-004 & $31.20 \pm 1.05$ & $0.485$ & 强干扰阻塞状态 \\
+  Sample-005 & $14.12 \pm 0.18$ & $0.963$ & 正常传输状态 \\
+  Sample-006 & $16.78 \pm 0.32$ & $0.925$ & 正常传输状态 \\
+\end{longtable}
+\end{center}
+
+\section{算法伪代码排版规范}
+
+算法环境在论文中通常按章编号，如“算法1-1”。下面展示了一个规范的自适应梯度优化算法编写示例。
+
+\begin{table}[htbp]
+  \centering
+  \begin{minipage}{0.9\textwidth}
+    \rule{\linewidth}{1.0pt}\vspace{3pt}
+    \noindent\textbf{算法 1-1} \quad 动态权重自适应迭代优化算法 (AdaOpt)\\[-6pt]
+    \rule{\linewidth}{0.5pt}\vspace{4pt}
+    \textbf{输入：} 训练样本集合 $\mathcal{D}$，学习率 $\alpha$，衰减系数 $\beta$，最大迭代步数 $T$；\\
+    \textbf{输出：} 优化收敛权重参数 $\mathbf{W}^*$。
+    \begin{enumerate}[leftmargin=2.0em, itemsep=2pt, topsep=2pt]
+      \item[1:] 初始化模型参数 $\mathbf{W}_0 \leftarrow \mathbf{0}$，一阶动量 $\mathbf{m}_0 \leftarrow \mathbf{0}$，时间步 $t \leftarrow 0$；
+      \item[2:] \textbf{while} $t < T$ 且 $\|\nabla \mathcal{L}(\mathbf{W}_t)\| > \epsilon$ \textbf{do}
+      \item[3:] \quad $t \leftarrow t + 1$；
+      \item[4:] \quad 从数据集中抽取当前微批次样本 $\mathcal{B}_t \subset \mathcal{D}$；
+      \item[5:] \quad 计算损失函数关于当前权重的梯度值 $\mathbf{g}_t \leftarrow \nabla_{\mathbf{W}} \mathcal{L}(\mathbf{W}_{t-1}; \mathcal{B}_t)$；
+      \item[6:] \quad 更新指数移动平均动量 $\mathbf{m}_t \leftarrow \beta \mathbf{m}_{t-1} + (1 - \beta) \mathbf{g}_t$；
+      \item[7:] \quad 更新网络权重参数 $\mathbf{W}_t \leftarrow \mathbf{W}_{t-1} - \alpha \mathbf{m}_t$；
+      \item[8:] \textbf{end while}
+      \item[9:] \textbf{return} 最终模型权重 $\mathbf{W}^* = \mathbf{W}_t$。
+    \end{enumerate}
+    \rule{\linewidth}{1.0pt}
+  \end{minipage}
+\end{table}
+
+\section{本章小结}
+
+本章详细阐述了论文的研究背景、理论意义与工程应用价值，并给出了北邮研究生学位论文在各级标题、数学公式、双语图表、三线表、长表续表、算法伪代码及参考文献引用方面的规范排版标准。后续章节将围绕核心创新点展开深入讨论。

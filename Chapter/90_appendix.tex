@@ -1,0 +1,39 @@
+%% -----------------------------------------------------------------
+%% 北京邮电大学研究生学位论文 - 附录
+%% 格式要求（2025年1月15日规范）：
+%% 1. 标题用黑体三号字，居中对齐，首行无缩进，段前0行，段后2行，单倍行距
+%% 2. 附录内容编于正文后，公式、图表重新按字母编号（如 式(A-1)、图A-1 等）
+%% -----------------------------------------------------------------
+
+\appendix
+
+\chapter{数学推导与辅助定理证明}
+
+\section{定理 1 的收敛性证明}
+
+此处补充正文中过于冗长的公式推导与引理证明。
+
+设序列 $\{x_k\}$ 满足以下递归不等式：
+\begin{equation}
+  \|x_{k+1} - x^*\|^2 \le (1 - \rho)\|x_k - x^*\|^2 + \epsilon_k
+  \label{eq:appendix_proof}
+\end{equation}
+其中 $0 < \rho < 1$，误差项满足 $\sum_{k=1}^\infty \epsilon_k < \infty$。根据超鞅收敛定理，可知序列 $\{x_k\}$ 以概率 1 强收敛于最优点 $x^*$。
+
+\section{重要辅助参数表}
+
+\begin{table}[htbp]
+  \centering
+  \bicaption{仿真实验补充配置参数表}{Supplementary Configuration Parameters for Simulation}
+  \label{tab:appendix_table}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lll}
+    \toprule
+    参数名称 & 配置值 & 单位说明 \\
+    \midrule
+    蒙特卡洛仿真次数 & 10000 & 次 \\
+    信道衰落模型 & 瑞利平坦衰落 & -- \\
+    天线增益 & 15 & $\mathrm{dBi}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}

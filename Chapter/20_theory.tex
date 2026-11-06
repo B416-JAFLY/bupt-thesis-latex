@@ -1,0 +1,30 @@
+%% -----------------------------------------------------------------
+%% 北京邮电大学研究生学位论文 - 第二章 理论与方法
+%% -----------------------------------------------------------------
+
+\chapter{理论分析与系统建模}
+
+\section{引言}
+
+本章重点阐述论文所提方法的核心理论架构与系统数学建模。在第一章综述的基础上，针对现有算法在复杂信道条件下的性能退化现象，提出了一种多尺度协同优化框架。
+
+\section{系统模型与问题建模}
+
+考虑由 $M$ 个接入节点与 $K$ 个边缘终端组成的分布式处理网络。节点间通过无线正交频分复用链路进行互联互通。系统的整体效用函数表示为：
+\begin{equation}
+  U(\mathbf{p}, \mathbf{w}) = \sum_{k=1}^K w_k \log \left( 1 + \gamma_k(\mathbf{p}) \right) - \sum_{m=1}^M \alpha_m p_m
+  \label{eq:utility}
+\end{equation}
+其中，$\mathbf{p} = [p_1, \dots, p_M]^T$ 为各节点发射功率向量，$\mathbf{w}$ 为服务优先级加权向量，$\alpha_m$ 为功耗代价因子。
+
+\subsection{凸松弛与对偶分解}
+
+由于式~(\ref{eq:utility})中存在非凸耦合约束，直接求解属于 NP-hard 难题。本文采用对偶分解法将原始全局优化问题转化为一系列局部子问题：
+\begin{equation}
+  \mathcal{D}(\boldsymbol{\lambda}) = \max_{\mathbf{p} \in \mathcal{P}} \left\{ U(\mathbf{p}, \mathbf{w}) - \boldsymbol{\lambda}^T (\mathbf{A}\mathbf{p} - \mathbf{b}) \right\}
+  \label{eq:dual}
+\end{equation}
+
+\section{本章小结}
+
+本章建立了多节点分布式系统的效用最优化理论模型，证明了对偶间隙的存在条件与收敛性边界，为后续算法设计与实证分析提供了理论依据。
