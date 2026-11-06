@@ -4,6 +4,7 @@
 %% 1. 纸质版论文封面打印在研究生院统一发放的背景纸上（硕士：淡黄色铜版纸；博士：深灰色铜版纸）
 %% 2. 背景纸已预先印刷了校徽及以上部分（校名、学位类别、校徽）
 %% 3. 本文件仅在校徽下方对应区域打印个人信息与题目，供打印店直接进纸套印
+%% 4. 内置智能自适应折行算法与 \\ 手动换行支持，长题目与长字段绝不越界
 %% -----------------------------------------------------------------
 
 \documentclass[UTF8,a4paper,zihao=-4]{ctexart}
@@ -17,8 +18,184 @@
 }
 \usepackage{fontspec}
 \setmainfont{Times New Roman}
+\usepackage{expl3}
 
-\newcommand{\BUPTunderline}[2]{\underline{\makebox[#1][c]{#2}}}
+\newlength{\BUPTtitleW}
+\newlength{\BUPTinfoW}
+\setlength{\BUPTtitleW}{11.5cm}
+\setlength{\BUPTinfoW}{8.2cm}
+
+\ExplSyntaxOn
+\seq_new:N \l_bupt_chunks_seq
+\seq_new:N \l_bupt_words_seq
+\seq_new:N \l_bupt_final_seq
+\tl_new:N \l_bupt_curr_tl
+\box_new:N \l_bupt_measure_box
+
+\cs_generate_variant:Nn \seq_set_split:Nnn { Nno, Nnx }
+\cs_generate_variant:Nn \tl_range:nnn { Vnn }
+\cs_generate_variant:Nn \tl_item:nn { Vn }
+\cs_generate_variant:Nn \tl_count:n { V }
+
+\cs_new_protected:Npn \bupt_auto_wrap_text:nnn #1#2#3
+{
+  \hbox_set:Nn \l_bupt_measure_box { #2 #3 }
+  \dim_compare:nTF { \box_wd:N \l_bupt_measure_box <= #1 }
+  {
+    \seq_put_right:Nn \l_bupt_final_seq { #3 }
+  }
+  {
+    \seq_set_split:Nno \l_bupt_words_seq { ~ } { #3 }
+    \int_compare:nNnTF { \seq_count:N \l_bupt_words_seq } > { 1 }
+    {
+      \tl_clear:N \l_bupt_curr_tl
+      \seq_map_inline:Nn \l_bupt_words_seq
+      {
+        \tl_if_empty:nTF { \l_bupt_curr_tl }
+        {
+          \tl_set:Nn \l_bupt_curr_tl { ##1 }
+        }
+        {
+          \hbox_set:Nn \l_bupt_measure_box { #2 \l_bupt_curr_tl ~ ##1 }
+          \dim_compare:nNnTF { \box_wd:N \l_bupt_measure_box } > {#1}
+          {
+            \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+            \tl_set:Nn \l_bupt_curr_tl { ##1 }
+          }
+          {
+            \tl_put_right:Nn \l_bupt_curr_tl { ~ ##1 }
+          }
+        }
+      }
+      \tl_if_empty:nF { \l_bupt_curr_tl }
+      {
+        \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+      }
+    }
+    {
+      \tl_clear:N \l_bupt_curr_tl
+      \tl_map_inline:nn { #3 }
+      {
+        \tl_if_empty:nTF { \l_bupt_curr_tl }
+        {
+          \tl_set:Nn \l_bupt_curr_tl { ##1 }
+        }
+        {
+          \hbox_set:Nn \l_bupt_measure_box { #2 \l_bupt_curr_tl ##1 }
+          \dim_compare:nNnTF { \box_wd:N \l_bupt_measure_box } > {#1}
+          {
+            \tl_set:Nn \l_tmpa_tl { ##1 }
+            \bool_set_false:N \l_tmpa_bool
+            \tl_if_in:NnT \l_tmpa_tl { ， } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { 、 } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { ） } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { ； } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { ： } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { 。 } { \bool_set_true:N \l_tmpa_bool }
+            
+            \bool_if:NTF \l_tmpa_bool
+            {
+              \tl_put_right:Nn \l_bupt_curr_tl { ##1 }
+              \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+              \tl_clear:N \l_bupt_curr_tl
+            }
+            {
+              \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+              \tl_set:Nn \l_bupt_curr_tl { ##1 }
+            }
+          }
+          {
+            \tl_put_right:Nn \l_bupt_curr_tl { ##1 }
+          }
+        }
+      }
+      \tl_if_empty:nF { \l_bupt_curr_tl }
+      {
+        \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+      }
+    }
+  }
+}
+
+\cs_new_protected:Npn \bupt_process_field_lines:nnn #1#2#3
+{
+  \seq_clear:N \l_bupt_final_seq
+  \seq_set_split:Nno \l_bupt_chunks_seq { \\ } { #3 }
+  \seq_map_inline:Nn \l_bupt_chunks_seq
+  {
+    \bupt_auto_wrap_text:nnn {#1} {#2} { ##1 }
+  }
+}
+
+\cs_new_protected:Npn \bupt_process_title_cn:n #1
+{
+  \seq_clear:N \l_bupt_final_seq
+  \seq_set_split:Nno \l_bupt_chunks_seq { \\ } { #1 }
+  \int_compare:nNnTF { \seq_count:N \l_bupt_chunks_seq } > { 1 }
+  {
+    \seq_map_inline:Nn \l_bupt_chunks_seq
+    {
+      \bupt_auto_wrap_text:nnn { \BUPTtitleW } { \songti\zihao{-2}\bfseries } { ##1 }
+    }
+  }
+  {
+    \hbox_set:Nn \l_bupt_measure_box { \songti\zihao{-2}\bfseries #1 }
+    \dim_compare:nTF { \box_wd:N \l_bupt_measure_box <= \BUPTtitleW }
+    {
+      \seq_put_right:Nn \l_bupt_final_seq { #1 }
+    }
+    {
+      % 超过单行宽度，按中点平衡拆分为2行，并避让行首标点
+      \tl_set:No \l_tmpc_tl { #1 }
+      \int_set:Nn \l_tmpa_int { \tl_count:V \l_tmpc_tl }
+      \int_set:Nn \l_tmpb_int { \int_div_truncate:nn { \l_tmpa_int + 1 } { 2 } }
+      \tl_set:Nx \l_tmpa_tl { \tl_item:Vn \l_tmpc_tl { \l_tmpb_int + 1 } }
+      \tl_if_in:NnT \l_tmpa_tl { ， } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { 、 } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { ） } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { ； } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { ： } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { 。 } { \int_incr:N \l_tmpb_int }
+      
+      \tl_set:Nx \l_bupt_curr_tl { \tl_range:Vnn \l_tmpc_tl { 1 } { \l_tmpb_int } }
+      \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+      \tl_set:Nx \l_bupt_curr_tl { \tl_range:Vnn \l_tmpc_tl { \l_tmpb_int + 1 } { -1 } }
+      \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+    }
+  }
+}
+
+\cs_new_protected:Npn \bupt_render_cn_title:n #1
+{
+  \bupt_process_title_cn:n { #1 }
+  \parbox[t]{\linewidth}{%
+    \centering
+    \begin{tabular}[t]{@{}l@{\hspace{0pt}}l@{}}
+      \songti\zihao{-2}\bfseries 题\quad 目： &
+      \underline{\makebox[\BUPTtitleW][c]{\songti\zihao{-2}\bfseries \seq_item:Nn \l_bupt_final_seq { 1 }}}
+      \int_step_inline:nnn { 2 } { \seq_count:N \l_bupt_final_seq }
+      {
+        \\ \noalign{\vspace{6pt}}
+        & \underline{\makebox[\BUPTtitleW][c]{\songti\zihao{-2}\bfseries \seq_item:Nn \l_bupt_final_seq {##1}}}
+      }
+    \end{tabular}%
+  }
+}
+
+\cs_new_protected:Npn \bupt_render_info_field:nnn #1#2#3
+{
+  \bupt_process_field_lines:nnn {#1} {#2} { #3 }
+  \parbox[t]{#1}{%
+    \seq_map_inline:Nn \l_bupt_final_seq
+    {%
+      \underline{\makebox[#1][c]{#2 ##1}}\par\vspace{3pt}%
+    }%
+  }%
+}
+
+\cs_set_eq:NN \BUPTRenderCnTitle \bupt_render_cn_title:n
+\cs_set_eq:NN \BUPTRenderField \bupt_render_info_field:nnn
+\ExplSyntaxOff
 
 \begin{document}
 \pagestyle{empty}
@@ -27,23 +204,21 @@
 \vspace*{10.5cm}
 
 \begin{center}
-  %% 论文题目（宋体小二号加粗，不超过36字）
-  {\songti\zihao{-2}\bfseries
-    题\quad 目：\underline{\makebox[10.5cm][c]{基于深度学习的高性能协同通信网络优化方法}}%
-  }\\[2.0cm]
+  %% 论文题目（宋体小二号加粗，支持自适应折行或显式 \\ 换行，绝不越界）
+  \BUPTRenderCnTitle{基于深度学习的高性能协同通信网络优化方法}\\[1.5cm]
 
-  %% 个人信息（宋体四号加粗）
+  %% 个人信息（宋体四号加粗，支持自适应折行或 \\ 换行，每行独立下划线）
   {\songti\zihao{4}\bfseries
     \renewcommand{\arraystretch}{1.6}
-    \begin{tabular}{rc}
-      学\qquad 号： & \BUPTunderline{7.5cm}{2022110123} \\
-      姓\qquad 名： & \BUPTunderline{7.5cm}{张\quad 三} \\
-      学科专业：   & \BUPTunderline{7.5cm}{信息与通信工程} \\
-      学习方式：   & \BUPTunderline{7.5cm}{全日制} \\
-      导\qquad 师： & \BUPTunderline{7.5cm}{李\quad 四\quad 教授} \\
-      学\qquad 院： & \BUPTunderline{7.5cm}{信息与通信工程学院}
+    \begin{tabular}{r@{\hspace{0.5em}}l}
+      学\qquad 号： & \BUPTRenderField{\BUPTinfoW}{\songti\zihao{4}\bfseries}{2022110123} \\
+      姓\qquad 名： & \BUPTRenderField{\BUPTinfoW}{\songti\zihao{4}\bfseries}{张\quad 三} \\
+      学科专业：   & \BUPTRenderField{\BUPTinfoW}{\songti\zihao{4}\bfseries}{信息与通信工程} \\
+      学习方式：   & \BUPTRenderField{\BUPTinfoW}{\songti\zihao{4}\bfseries}{全日制} \\
+      导\qquad 师： & \BUPTRenderField{\BUPTinfoW}{\songti\zihao{4}\bfseries}{李\quad 四\quad 教授} \\
+      学\qquad 院： & \BUPTRenderField{\BUPTinfoW}{\songti\zihao{4}\bfseries}{信息与通信工程学院}
     \end{tabular}%
-  }\\[2.2cm]
+  }\\[1.8cm]
 
   %% 打印日期
   {\songti\zihao{4}\bfseries 2025~年~5~月~30~日}

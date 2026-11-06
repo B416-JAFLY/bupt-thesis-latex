@@ -387,9 +387,259 @@
 }
 
 %% -----------------------------------------------------------------
-%% 10. 扉页与元数据宏定义
+%% 10. 扉页与元数据宏定义及多行下划线自适应折行算法
 %% -----------------------------------------------------------------
 \RequirePackage{keyval}
+
+\newlength{\BUPT@value@titlewidth}
+\newlength{\BUPT@value@titlewidthEN}
+\newlength{\BUPT@value@infowidth}
+\newlength{\BUPT@value@infowidthEN}
+\setlength{\BUPT@value@titlewidth}{11.5cm}
+\setlength{\BUPT@value@titlewidthEN}{13.5cm}
+\setlength{\BUPT@value@infowidth}{8.2cm}
+\setlength{\BUPT@value@infowidthEN}{8.8cm}
+
+\ExplSyntaxOn
+\seq_new:N \l_bupt_chunks_seq
+\seq_new:N \l_bupt_words_seq
+\seq_new:N \l_bupt_final_seq
+\tl_new:N \l_bupt_curr_tl
+\box_new:N \l_bupt_measure_box
+
+\cs_generate_variant:Nn \seq_set_split:Nnn { Nno, Nnx }
+\cs_generate_variant:Nn \tl_range:nnn { Vnn }
+\cs_generate_variant:Nn \tl_item:nn { Vn }
+\cs_generate_variant:Nn \tl_count:n { V }
+
+%% -----------------------------------------------------------------
+%% 通用自适应断行核心函数
+%% -----------------------------------------------------------------
+\cs_new_protected:Npn \bupt_auto_wrap_text:nnn #1#2#3
+% #1: 目标宽度, #2: 字体设置, #3: 待处理纯文本片段
+{
+  % 1. 首先检测是否能单行放下
+  \hbox_set:Nn \l_bupt_measure_box { #2 #3 }
+  \dim_compare:nTF { \box_wd:N \l_bupt_measure_box <= #1 }
+  {
+    \seq_put_right:Nn \l_bupt_final_seq { #3 }
+  }
+  {
+    % 2. 放不下，检测是否有空格（英文或带空格中文）
+    \seq_set_split:Nno \l_bupt_words_seq { ~ } { #3 }
+    \int_compare:nNnTF { \seq_count:N \l_bupt_words_seq } > { 1 }
+    {
+      % 按单词贪心断行
+      \tl_clear:N \l_bupt_curr_tl
+      \seq_map_inline:Nn \l_bupt_words_seq
+      {
+        \tl_if_empty:nTF { \l_bupt_curr_tl }
+        {
+          \tl_set:Nn \l_bupt_curr_tl { ##1 }
+        }
+        {
+          \hbox_set:Nn \l_bupt_measure_box { #2 \l_bupt_curr_tl ~ ##1 }
+          \dim_compare:nNnTF { \box_wd:N \l_bupt_measure_box } > {#1}
+          {
+            \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+            \tl_set:Nn \l_bupt_curr_tl { ##1 }
+          }
+          {
+            \tl_put_right:Nn \l_bupt_curr_tl { ~ ##1 }
+          }
+        }
+      }
+      \tl_if_empty:nF { \l_bupt_curr_tl }
+      {
+        \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+      }
+    }
+    {
+      % 3. 中文无空格，按字符贪心断行
+      \tl_clear:N \l_bupt_curr_tl
+      \tl_map_inline:nn { #3 }
+      {
+        \tl_if_empty:nTF { \l_bupt_curr_tl }
+        {
+          \tl_set:Nn \l_bupt_curr_tl { ##1 }
+        }
+        {
+          \hbox_set:Nn \l_bupt_measure_box { #2 \l_bupt_curr_tl ##1 }
+          \dim_compare:nNnTF { \box_wd:N \l_bupt_measure_box } > {#1}
+          {
+            \tl_set:Nn \l_tmpa_tl { ##1 }
+            \bool_set_false:N \l_tmpa_bool
+            \tl_if_in:NnT \l_tmpa_tl { ， } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { 、 } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { ） } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { ； } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { ： } { \bool_set_true:N \l_tmpa_bool }
+            \tl_if_in:NnT \l_tmpa_tl { 。 } { \bool_set_true:N \l_tmpa_bool }
+            
+            \bool_if:NTF \l_tmpa_bool
+            {
+              \tl_put_right:Nn \l_bupt_curr_tl { ##1 }
+              \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+              \tl_clear:N \l_bupt_curr_tl
+            }
+            {
+              \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+              \tl_set:Nn \l_bupt_curr_tl { ##1 }
+            }
+          }
+          {
+            \tl_put_right:Nn \l_bupt_curr_tl { ##1 }
+          }
+        }
+      }
+      \tl_if_empty:nF { \l_bupt_curr_tl }
+      {
+        \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+      }
+    }
+  }
+}
+
+%% -----------------------------------------------------------------
+%% 支持 \\ 强制换行分割的处理函数（个人信息等常规表单字段）
+%% -----------------------------------------------------------------
+\cs_new_protected:Npn \bupt_process_field_lines:nnn #1#2#3
+% #1: 目标宽度, #2: 字体设置, #3: 用户输入内容
+{
+  \seq_clear:N \l_bupt_final_seq
+  \seq_set_split:Nno \l_bupt_chunks_seq { \\ } { #3 }
+  \seq_map_inline:Nn \l_bupt_chunks_seq
+  {
+    \bupt_auto_wrap_text:nnn {#1} {#2} { ##1 }
+  }
+}
+
+%% -----------------------------------------------------------------
+%% 中文题目自适应折行算法（支持显式 \\ 与超长平衡平分）
+%% -----------------------------------------------------------------
+\cs_new_protected:Npn \bupt_process_title_cn:n #1
+{
+  \seq_clear:N \l_bupt_final_seq
+  \seq_set_split:Nno \l_bupt_chunks_seq { \\ } { #1 }
+  \int_compare:nNnTF { \seq_count:N \l_bupt_chunks_seq } > { 1 }
+  {
+    % 用户显式指定了换行 \\
+    \seq_map_inline:Nn \l_bupt_chunks_seq
+    {
+      \bupt_auto_wrap_text:nnn { \BUPT@value@titlewidth } { \songti\zihao{-2}\bfseries } { ##1 }
+    }
+  }
+  {
+    % 单行输入：检测是否能单行容纳
+    \hbox_set:Nn \l_bupt_measure_box { \songti\zihao{-2}\bfseries #1 }
+    \dim_compare:nTF { \box_wd:N \l_bupt_measure_box <= \BUPT@value@titlewidth }
+    {
+      \seq_put_right:Nn \l_bupt_final_seq { #1 }
+    }
+    {
+      % 超过单行宽度，按中点平衡拆分为2行，并避让行首标点
+      \tl_set:No \l_tmpc_tl { #1 }
+      \int_set:Nn \l_tmpa_int { \tl_count:V \l_tmpc_tl }
+      \int_set:Nn \l_tmpb_int { \int_div_truncate:nn { \l_tmpa_int + 1 } { 2 } }
+      \tl_set:Nx \l_tmpa_tl { \tl_item:Vn \l_tmpc_tl { \l_tmpb_int + 1 } }
+      \tl_if_in:NnT \l_tmpa_tl { ， } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { 、 } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { ） } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { ； } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { ： } { \int_incr:N \l_tmpb_int }
+      \tl_if_in:NnT \l_tmpa_tl { 。 } { \int_incr:N \l_tmpb_int }
+      
+      \tl_set:Nx \l_bupt_curr_tl { \tl_range:Vnn \l_tmpc_tl { 1 } { \l_tmpb_int } }
+      \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+      \tl_set:Nx \l_bupt_curr_tl { \tl_range:Vnn \l_tmpc_tl { \l_tmpb_int + 1 } { -1 } }
+      \seq_put_right:NV \l_bupt_final_seq \l_bupt_curr_tl
+    }
+  }
+}
+
+%% -----------------------------------------------------------------
+%% 英文题目自适应折行算法
+%% -----------------------------------------------------------------
+\cs_new_protected:Npn \bupt_process_title_en:n #1
+{
+  \seq_clear:N \l_bupt_final_seq
+  \seq_set_split:Nno \l_bupt_chunks_seq { \\ } { #1 }
+  \int_compare:nNnTF { \seq_count:N \l_bupt_chunks_seq } > { 1 }
+  {
+    \seq_map_inline:Nn \l_bupt_chunks_seq
+    {
+      \bupt_auto_wrap_text:nnn { \BUPT@value@titlewidthEN } { \rmfamily\zihao{-2}\bfseries } { ##1 }
+    }
+  }
+  {
+    \hbox_set:Nn \l_bupt_measure_box { \rmfamily\zihao{-2}\bfseries #1 }
+    \dim_compare:nTF { \box_wd:N \l_bupt_measure_box <= \BUPT@value@titlewidthEN }
+    {
+      \seq_put_right:Nn \l_bupt_final_seq { #1 }
+    }
+    {
+      \bupt_auto_wrap_text:nnn { \BUPT@value@titlewidthEN } { \rmfamily\zihao{-2}\bfseries } { #1 }
+    }
+  }
+}
+
+%% -----------------------------------------------------------------
+%% 渲染中文题目（表格排版，多行对齐下划线）
+%% -----------------------------------------------------------------
+\cs_new_protected:Npn \bupt_render_cn_title:n #1
+{
+  \bupt_process_title_cn:n { #1 }
+  \parbox[t]{\linewidth}{%
+    \centering
+    \begin{tabular}[t]{@{}l@{\hspace{0pt}}l@{}}
+      \songti\zihao{-2}\bfseries \BUPT@label@title &
+      \underline{\makebox[\BUPT@value@titlewidth][c]{\songti\zihao{-2}\bfseries \seq_item:Nn \l_bupt_final_seq { 1 }}}
+      \int_step_inline:nnn { 2 } { \seq_count:N \l_bupt_final_seq }
+      {
+        \\ \noalign{\vspace{6pt}}
+        & \underline{\makebox[\BUPT@value@titlewidth][c]{\songti\zihao{-2}\bfseries \seq_item:Nn \l_bupt_final_seq {##1}}}
+      }
+    \end{tabular}%
+  }
+}
+
+%% -----------------------------------------------------------------
+%% 渲染英文题目（表格居中排版，多行对齐下划线）
+%% -----------------------------------------------------------------
+\cs_new_protected:Npn \bupt_render_en_title:n #1
+{
+  \bupt_process_title_en:n { #1 }
+  \parbox[t]{\linewidth}{%
+    \centering
+    \begin{tabular}[t]{@{}c@{}}
+      \underline{\makebox[\BUPT@value@titlewidthEN][c]{\rmfamily\zihao{-2}\bfseries \seq_item:Nn \l_bupt_final_seq { 1 }}}
+      \int_step_inline:nnn { 2 } { \seq_count:N \l_bupt_final_seq }
+      {
+        \\ \noalign{\vspace{6pt}}
+        \underline{\makebox[\BUPT@value@titlewidthEN][c]{\rmfamily\zihao{-2}\bfseries \seq_item:Nn \l_bupt_final_seq {##1}}}
+      }
+    \end{tabular}%
+  }
+}
+
+%% -----------------------------------------------------------------
+%% 渲染个人信息表单字段（支持自动折行与\\断行，每行独立下划线）
+%% -----------------------------------------------------------------
+\cs_new_protected:Npn \bupt_render_info_field:nnn #1#2#3
+{
+  \bupt_process_field_lines:nnn {#1} {#2} { #3 }
+  \parbox[t]{#1}{%
+    \seq_map_inline:Nn \l_bupt_final_seq
+    {%
+      \underline{\makebox[#1][c]{#2 ##1}}\par\vspace{3pt}%
+    }%
+  }%
+}
+
+\cs_set_eq:NN \BUPTRenderCnTitle \bupt_render_cn_title:n
+\cs_set_eq:NN \BUPTRenderEnTitle \bupt_render_en_title:n
+\cs_set_eq:NN \BUPTRenderField \bupt_render_info_field:nnn
+\ExplSyntaxOff
 
 \def\BUPTdateOptions#1{\setkeys{BUPTdate}{#1}}
 \define@key{BUPTdate}{pageYear}{\def\BUPT@value@pageYear{#1}}
@@ -423,12 +673,6 @@
 
 %% -----------------------------------------------------------------
 %% 11. 中文扉页生成（内封）
-%% 规范要求：
-%% 密级：右上角宋体加粗四号
-%% 校名：上方高清晰校名
-%% 类别：黑体32号加粗居中，“硕士学位论文（学术学位）”等
-%% 题目：宋体小二号加粗，居中/两端对齐，不超过36字
-%% 个人信息：宋体四号加粗，两端对齐带下划线
 %% -----------------------------------------------------------------
 \newcommand{\makechinesetitle}{%
   \cleardoublepage
@@ -436,25 +680,23 @@
   \begin{flushright}
     {\songti\zihao{4}\bfseries \BUPT@label@confidential\BUPT@value@confidential\hspace{1em}}
   \end{flushright}
-  \vspace{0.5cm}
+  \vspace{0.3cm}
   \begin{center}
-    \includegraphics[width=12.67cm]{\BUPT@value@schoolname}\\[1.2cm]
-    {\heiti\fontsize{32bp}{38bp}\selectfont\bfseries \BUPT@value@degree\BUPT@label@thesis（\BUPT@value@degreemode）}\\[1.0cm]
-    \includegraphics[width=3.4cm]{\BUPT@value@schoollogo}\\[1.2cm]
-    {\songti\zihao{-2}\bfseries
-      \BUPT@label@title \underline{\makebox[10.5cm][c]{\BUPT@value@title}}%
-    }\\[1.5cm]
+    \includegraphics[width=12.67cm]{\BUPT@value@schoolname}\\[1.0cm]
+    {\heiti\fontsize{32bp}{38bp}\selectfont\bfseries \BUPT@value@degree\BUPT@label@thesis（\BUPT@value@degreemode）}\\[0.8cm]
+    \includegraphics[width=3.4cm]{\BUPT@value@schoollogo}\\[1.0cm]
+    \BUPTRenderCnTitle{\BUPT@value@title}\\[1.2cm]
     {\songti\zihao{4}\bfseries
-      \renewcommand{\arraystretch}{1.5}
-      \begin{tabular}{rc}
-        \BUPT@label@studentid    & \BUPTunderline{7.5cm}{\BUPT@value@studentid}    \\
-        \BUPT@label@name         & \BUPTunderline{7.5cm}{\BUPT@value@name}         \\
-        \BUPT@label@major        & \BUPTunderline{7.5cm}{\BUPT@value@major}        \\
-        \BUPT@label@trainingmode & \BUPTunderline{7.5cm}{\BUPT@value@trainingmode} \\
-        \BUPT@label@supervisor   & \BUPTunderline{7.5cm}{\BUPT@value@supervisor}   \\
-        \BUPT@label@institute    & \BUPTunderline{7.5cm}{\BUPT@value@institute}
+      \renewcommand{\arraystretch}{1.6}
+      \begin{tabular}{r@{\hspace{0.5em}}l}
+        \BUPT@label@studentid    & \BUPTRenderField{\BUPT@value@infowidth}{\songti\zihao{4}\bfseries}{\BUPT@value@studentid}    \\
+        \BUPT@label@name         & \BUPTRenderField{\BUPT@value@infowidth}{\songti\zihao{4}\bfseries}{\BUPT@value@name}         \\
+        \BUPT@label@major        & \BUPTRenderField{\BUPT@value@infowidth}{\songti\zihao{4}\bfseries}{\BUPT@value@major}        \\
+        \BUPT@label@trainingmode & \BUPTRenderField{\BUPT@value@infowidth}{\songti\zihao{4}\bfseries}{\BUPT@value@trainingmode} \\
+        \BUPT@label@supervisor   & \BUPTRenderField{\BUPT@value@infowidth}{\songti\zihao{4}\bfseries}{\BUPT@value@supervisor}   \\
+        \BUPT@label@institute    & \BUPTRenderField{\BUPT@value@infowidth}{\songti\zihao{4}\bfseries}{\BUPT@value@institute}
       \end{tabular}%
-    }\\[1.8cm]
+    }\\[1.5cm]
     {\songti\zihao{4}\bfseries \BUPT@value@pageYear~年~\BUPT@value@pageMonth~月~\BUPT@value@pageDay~日}
   \end{center}
   \cleardoublepage
@@ -469,23 +711,21 @@
   \begin{flushright}
     {\rmfamily\zihao{4}\bfseries \BUPT@label@confidentialEN\BUPT@value@confidentialEN\hspace{1em}}
   \end{flushright}
-  \vspace{0.5cm}
+  \vspace{0.3cm}
   \begin{center}
-    \includegraphics[width=14.5cm]{\BUPT@value@schoolen}\\[1.2cm]
-    {\rmfamily\zihao{-1}\bfseries \BUPT@value@degreeEN~\BUPT@value@thesisEN}\\[1.2cm]
-    {\rmfamily\zihao{-2}\bfseries
-      \underline{\makebox[13cm][c]{\BUPT@value@titleEN}}%
-    }\\[1.5cm]
+    \includegraphics[width=14.5cm]{\BUPT@value@schoolen}\\[1.0cm]
+    {\rmfamily\zihao{-1}\bfseries \BUPT@value@thesisEN}\\[1.0cm]
+    \BUPTRenderEnTitle{\BUPT@value@titleEN}\\[1.2cm]
     {\rmfamily\zihao{4}\bfseries
-      \renewcommand{\arraystretch}{1.5}
-      \begin{tabular}{rc}
-        \BUPT@label@studentidEN  & \BUPTunderline{7.5cm}{\BUPT@value@studentidEN}  \\
-        \BUPT@label@nameEN       & \BUPTunderline{7.5cm}{\BUPT@value@nameEN}       \\
-        \BUPT@label@majorEN      & \BUPTunderline{7.5cm}{\BUPT@value@majorEN}      \\
-        \BUPT@label@supervisorEN & \BUPTunderline{7.5cm}{\BUPT@value@supervisorEN} \\
-        \BUPT@label@instituteEN  & \BUPTunderline{7.5cm}{\BUPT@value@instituteEN}
+      \renewcommand{\arraystretch}{1.6}
+      \begin{tabular}{r@{\hspace{0.5em}}l}
+        \BUPT@label@studentidEN  & \BUPTRenderField{\BUPT@value@infowidthEN}{\rmfamily\zihao{4}\bfseries}{\BUPT@value@studentidEN}  \\
+        \BUPT@label@nameEN       & \BUPTRenderField{\BUPT@value@infowidthEN}{\rmfamily\zihao{4}\bfseries}{\BUPT@value@nameEN}       \\
+        \BUPT@label@majorEN      & \BUPTRenderField{\BUPT@value@infowidthEN}{\rmfamily\zihao{4}\bfseries}{\BUPT@value@majorEN}      \\
+        \BUPT@label@supervisorEN & \BUPTRenderField{\BUPT@value@infowidthEN}{\rmfamily\zihao{4}\bfseries}{\BUPT@value@supervisorEN} \\
+        \BUPT@label@instituteEN  & \BUPTRenderField{\BUPT@value@infowidthEN}{\rmfamily\zihao{4}\bfseries}{\BUPT@value@instituteEN}
       \end{tabular}%
-    }\\[2.0cm]
+    }\\[1.5cm]
     {\rmfamily\zihao{4}\bfseries \BUPT@value@pageMonth,~\BUPT@value@pageYear}
   \end{center}
   \cleardoublepage
